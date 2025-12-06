@@ -4,6 +4,13 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import client from './config/db.js';
 
+// Import routes
+import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+// import donationRoutes from './routes/donationRoutes.js';
+// import searchRoutes from './routes/searchRoutes.js';
+// import fundingRoutes from './routes/fundingRoutes.js';
+
 dotenv.config();
 
 const app = express();
@@ -44,16 +51,9 @@ app.get('/', (req, res) => {
   res.send('Blood Donation Server is Running 🩸');
 });
 
-// Import routes (i'll create these next)
-// import authRoutes from './routes/authRoutes.js';
-// import userRoutes from './routes/userRoutes.js';
-// import donationRoutes from './routes/donationRoutes.js';
-// import searchRoutes from './routes/searchRoutes.js';
-// import fundingRoutes from './routes/fundingRoutes.js';
-
 // Use routes
-// app.use('/api/auth', authRoutes);
-// app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 // app.use('/api/donation-requests', donationRoutes);
 // app.use('/api/search', searchRoutes);
 // app.use('/api/funding', fundingRoutes);
