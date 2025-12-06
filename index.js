@@ -7,9 +7,9 @@ import client from './config/db.js';
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-// import donationRoutes from './routes/donationRoutes.js';
-// import searchRoutes from './routes/searchRoutes.js';
-// import fundingRoutes from './routes/fundingRoutes.js';
+import donationRoutes from './routes/donationRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
+import fundingRoutes from './routes/fundingRoutes.js';
 
 dotenv.config();
 
@@ -54,9 +54,9 @@ app.get('/', (req, res) => {
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-// app.use('/api/donation-requests', donationRoutes);
-// app.use('/api/search', searchRoutes);
-// app.use('/api/funding', fundingRoutes);
+app.use('/api/donation-requests', donationRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/funding', fundingRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
