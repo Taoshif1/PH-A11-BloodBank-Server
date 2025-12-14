@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "seed": "node seedData.js"
+    "seed": "node seedData.js",
+    "test": "node -e \"console.log('Server tests go here')\"",
+    "vercel-build": "echo 'Building for Vercel'"
   },
   "keywords": [],
   "author": "",
