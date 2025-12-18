@@ -17,23 +17,20 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // CORS configuration - FIXED for production
+
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:5174'
+].filter(Boolean);
+
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      process.env.CLIENT_URL,
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:3000'
-    ].filter(Boolean); // Remove undefined values
-    
-    // Allow requests with no origin (Postman, mobile apps, etc.)
+  origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    
-    // Check if origin is in allowed list
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('CORS blocked origin:', origin);
+      console.log('❌ CORS blocked:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -41,6 +38,7 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
+
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
