@@ -31,6 +31,25 @@
 
 The Blood Donation Server is a RESTful API built with Node.js & Express that powers the Blood Donation Application. It handles user authentication, donation request management, donor search, payment processing & more.
 
+## 📁 Project Structure
+
+```txt
+├── config/
+│   └── db.js
+├── routes/
+│   ├── authRoutes.js
+│   ├── userRoutes.js
+│   ├── donationRoutes.js
+│   ├── searchRoutes.js
+│   └── fundingRoutes.js
+├── middleware/
+│   └── authMiddleware.js
+├── server.js
+├── .env
+├── package.json
+└── README.md
+```
+
 ### Key Capabilities
 
 - **User Management**: Registration, authentication & role-based access control
