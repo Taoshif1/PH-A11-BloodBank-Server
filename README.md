@@ -44,7 +44,8 @@ The Blood Donation Server is a RESTful API built with Node.js & Express that pow
 │   └── fundingRoutes.js
 ├── middleware/
 │   └── authMiddleware.js
-├── server.js
+├── index.js
+├── seedData.js
 ├── .env
 ├── package.json
 └── README.md
