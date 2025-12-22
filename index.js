@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import client from './config/db.js';
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -17,97 +17,107 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // ==========================================
-// CORS CONFIGURATION - COMPLETE FIX
+// MONGODB CONNECTION SETUP
+// ==========================================
+const mongoUri = process.env.MONGO_URI;
+if (!mongoUri) {
+  console.error('❌ MONGO_URI is not defined in .env');
+  process.exit(1);
+}
+
+const mongoClient = new MongoClient(mongoUri, {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+});
+
+let db = null;
+
+async function connectToDatabase() {
+  try {
+    await mongoClient.connect();
+    db = mongoClient.db('bloodDonationDB');
+    
+    // Create indexes for performance
+    await db.collection('users').createIndex({ email: 1 }, { unique: true }).catch(() => {});
+    await db.collection('donationRequests').createIndex({ donationStatus: 1 }).catch(() => {});
+    await db.collection('donationRequests').createIndex({ requesterEmail: 1 }).catch(() => {});
+    await db.collection('donationRequests').createIndex({ createdAt: -1 }).catch(() => {});
+    
+    console.log('✅ Connected to MongoDB');
+    return db;
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+    throw error;
+  }
+}
+
+// ==========================================
+// CORS CONFIGURATION - CRITICAL
 // ==========================================
 const allowedOrigins = [
   'https://ph-a11-blood-bank-client.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
-  'http://localhost:3000'
-].filter(Boolean);
+  'http://localhost:3000',
+  'http://127.0.0.1:5173'
+];
 
-console.log('🌐 Allowed origins:', allowedOrigins);
+console.log('🌐 CORS allowed origins:', allowedOrigins);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    console.log('📨 Incoming request from origin:', origin);
-    
-    // Allow requests with no origin (Postman, mobile apps, curl)
+    // Allow requests with no origin (mobile apps, Postman, curl, etc.)
     if (!origin) {
-      console.log('✅ No origin - allowing');
       return callback(null, true);
     }
-    
-    // Check if origin is allowed
+
     if (allowedOrigins.includes(origin)) {
-      console.log('✅ Origin allowed:', origin);
       callback(null, true);
     } else {
-      console.log('❌ CORS blocked:', origin);
-      console.log('   Expected one of:', allowedOrigins);
-      callback(new Error(`CORS blocked: ${origin}`));
+      console.warn(`⚠️  CORS blocked origin: ${origin}`);
+      callback(new Error('CORS not allowed'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   exposedHeaders: ['Set-Cookie'],
+  maxAge: 3600,
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 200
 };
 
-// Apply CORS before other middleware
 app.use(cors(corsOptions));
 
-// Body parser and cookie parser
-app.use(express.json());
+// ==========================================
+// BODY PARSING & COOKIES
+// ==========================================
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // ==========================================
-// DATABASE CONNECTION
+// DATABASE MIDDLEWARE
 // ==========================================
-let db;
-
-async function connectDB() {
-  try {
-    await client.connect();
-    db = client.db('bloodDonationDB');
-    console.log('✅ Connected to MongoDB');
-    
-    // Create indexes for better performance
-    try {
-      await db.collection('users').createIndex({ email: 1 }, { unique: true });
-      await db.collection('donationRequests').createIndex({ donationStatus: 1 });
-      await db.collection('donationRequests').createIndex({ requesterEmail: 1 });
-      await db.collection('donationRequests').createIndex({ createdAt: -1 });
-      console.log('✅ Database indexes created');
-    } catch (indexError) {
-      console.log('ℹ️ Indexes already exist or error creating them');
-    }
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
-  }
-}
-
-connectDB();
-
-// Make db accessible to routes
 app.use((req, res, next) => {
   if (!db) {
-    return res.status(503).json({ message: 'Database not connected' });
+    return res.status(503).json({ 
+      message: 'Database not connected',
+      status: 'error'
+    });
   }
   req.db = db;
   next();
 });
 
 // ==========================================
-// ROUTES
+// HEALTH CHECK
 // ==========================================
-
-// Health check route
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'running',
     message: 'Blood Donation Server is Running 🩸',
     timestamp: new Date().toISOString(),
@@ -115,7 +125,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// API Routes
+// ==========================================
+// API ROUTES
+// ==========================================
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/donation-requests', donationRoutes);
@@ -123,59 +135,74 @@ app.use('/api/search', searchRoutes);
 app.use('/api/funding', fundingRoutes);
 
 // ==========================================
-// ERROR HANDLERS
+// 404 HANDLER
 // ==========================================
-
-// 404 handler
 app.use((req, res) => {
-  console.log('❌ 404 - Route not found:', req.method, req.path);
-  res.status(404).json({ 
+  res.status(404).json({
     message: 'Route not found',
     path: req.path,
     method: req.method
   });
 });
 
-// Error handling middleware
+// ==========================================
+// GLOBAL ERROR HANDLER
+// ==========================================
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.message);
-  console.error('Stack:', err.stack);
   
-  // Handle CORS errors specifically
-  if (err.message && err.message.includes('CORS')) {
-    return res.status(403).json({ 
-      message: 'CORS error - Origin not allowed',
+  // CORS error handling
+  if (err.message === 'CORS not allowed') {
+    return res.status(403).json({
+      message: 'CORS policy violation',
       origin: req.headers.origin
     });
   }
-  
-  res.status(err.status || 500).json({ 
-    message: err.message || 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
 
 // ==========================================
-// START SERVER
+// SERVER STARTUP
 // ==========================================
-
-app.listen(port, () => {
-  console.log('='.repeat(50));
-  console.log(`🚀 Server running on port ${port}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔐 CORS enabled for:`, allowedOrigins);
-  console.log('='.repeat(50));
-});
+async function startServer() {
+  try {
+    // Connect to database first
+    await connectToDatabase();
+    
+    // Then start the server
+    app.listen(port, () => {
+      console.log('='.repeat(60));
+      console.log(`🚀 Blood Donation Server running on port ${port}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔐 CORS enabled for: ${allowedOrigins.join(', ')}`);
+      console.log('='.repeat(60));
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
+  }
+}
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('\n🛑 Shutting down gracefully...');
-  await client.close();
+  await mongoClient.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('\n🛑 SIGTERM received, shutting down...');
-  await client.close();
+  await mongoClient.close();
   process.exit(0);
 });
+
+startServer();
+
+// ==========================================
+// EXPORT FOR VERCEL
+// ==========================================
+export default app;

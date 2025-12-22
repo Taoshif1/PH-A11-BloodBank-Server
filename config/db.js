@@ -4,19 +4,25 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const uri = process.env.MONGO_URI;
+if (!uri) throw new Error('❌ MONGO_URI not defined');
 
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  maxPoolSize: 10,
-  minPoolSize: 5,
-  retryWrites: true,
-  retryReads: true,
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-});
+let client;
+let clientPromise;
 
-export default client;
+if (!global._mongoClientPromise) {
+  client = new MongoClient(uri, {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  });
+  global._mongoClientPromise = client.connect();
+}
+
+clientPromise = global._mongoClientPromise;
+
+export async function getDB() {
+  const client = await clientPromise;
+  return client.db('bloodDonationDB');
+}
