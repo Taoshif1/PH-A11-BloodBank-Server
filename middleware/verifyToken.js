@@ -19,10 +19,15 @@ export const verifyToken = (req, res, next) => {
 // Verify if user is admin
 export const verifyAdmin = async (req, res, next) => {
   try {
-    const email = req.user.email;
-    const user = await req.db.collection('users').findOne({ email });
+    const email = req.user?.email;
+    if (!email) return res.status(401).json({ message: 'No email in token' });
 
-    if (user?.role !== 'admin') {
+    // Use regex 'i' flag to ignore case
+    const user = await req.db.collection('users').findOne({ 
+      email: { $regex: `^${email}$`, $options: 'i' } 
+    });
+
+    if (!user || user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. Admin only.' });
     }
     next();
