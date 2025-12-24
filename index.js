@@ -10,6 +10,7 @@ import userRoutes from './routes/userRoutes.js';
 import donationRoutes from './routes/donationRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import fundingRoutes from './routes/fundingRoutes.js';
+import { getDB } from './config/db.js';
 
 dotenv.config();
 
@@ -102,15 +103,19 @@ app.use(cookieParser());
 // ==========================================
 // DATABASE MIDDLEWARE
 // ==========================================
-app.use((req, res, next) => {
-  if (!db) {
-    return res.status(503).json({ 
-      message: 'Database not connected',
+app.use(async (req, res, next) => {
+  try {
+    // This ensures the connection is established before the request continues
+    const database = await getDB(); 
+    req.db = database;
+    next();
+  } catch (error) {
+    console.error('🔥 Database Connection Middleware Error:', error);
+    res.status(503).json({ 
+      message: 'Database connection could not be established',
       status: 'error'
     });
   }
-  req.db = db;
-  next();
 });
 
 // ==========================================

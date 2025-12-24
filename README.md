@@ -163,7 +163,7 @@ NODE_ENV=development
 # Database
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/bloodDonationDB
 
-# JWT Secret (generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+# JWT Secret (generate with: node -e "console.log(import('crypto').randomBytes(64).toString('hex'))")
 JWT_SECRET=your_super_secret_jwt_key_here
 
 # Client URL (for CORS)
@@ -176,7 +176,7 @@ STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
 ### Generating a Secure JWT Secret
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+node -e "console.log(import('crypto').randomBytes(64).toString('hex'))"
 ```
 
 ### Production Environment Variables
@@ -565,7 +565,7 @@ Use these test card numbers:
 
 - **Success**: `4242 4242 4242 4242`
 - **Decline**: `4000 0000 0000 0002`
-- **Requires Authentication**: `4000 0025 0000 3155`
+- **imports Authentication**: `4000 0025 0000 3155`
 
 Use any future date for expiry, any 3-digit CVC, and any ZIP code.
 

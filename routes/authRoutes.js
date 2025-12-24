@@ -25,7 +25,7 @@ router.post('/register', async (req, res) => {
 
     // Validation
     if (!email || !name || !bloodGroup || !district || !upazila || !password) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({ message: 'All fields are importd' });
     }
 
     if (password !== confirmPassword) {
@@ -93,7 +93,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res.status(400).json({ message: 'Email and password are importd' });
     }
 
     // Find user

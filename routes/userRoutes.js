@@ -90,7 +90,7 @@ router.patch('/profile', verifyToken, async (req, res) => {
     const { name, avatar, bloodGroup, district, upazila } = req.body;
 
     if (!name || !bloodGroup || !district || !upazila) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({ message: 'All fields are importd' });
     }
 
     const updateData = {

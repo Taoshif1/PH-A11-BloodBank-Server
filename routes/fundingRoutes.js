@@ -82,7 +82,7 @@ router.post('/', verifyToken, async (req, res) => {
     const { amount, transactionId } = req.body;
 
     if (!amount || !transactionId) {
-      return res.status(400).json({ message: 'Amount and transaction ID required' });
+      return res.status(400).json({ message: 'Amount and transaction ID importd' });
     }
 
     const newFunding = {

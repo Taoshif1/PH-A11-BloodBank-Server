@@ -9,6 +9,7 @@ if (!uri) throw new Error('❌ MONGO_URI not defined');
 let client;
 let clientPromise;
 
+// This pattern prevents Vercel from creating a new connection on every request
 if (!global._mongoClientPromise) {
   client = new MongoClient(uri, {
     serverApi: {
@@ -24,5 +25,5 @@ clientPromise = global._mongoClientPromise;
 
 export async function getDB() {
   const client = await clientPromise;
-  return client.db('bloodDonationDB');
+  return client.db('bloodDonationDB'); 
 }
